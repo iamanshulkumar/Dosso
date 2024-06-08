@@ -28,6 +28,8 @@ import Swal from 'sweetalert2';
 
 const Login = props => {
   document.title = "Login"
+
+  const rootUser = "9582398529";
   const navigate = useNavigate()
   const [generatedOTP, setGeneratedOTP] = useState('');
   const [enteredOTP, setEnteredOTP] = useState('');
@@ -47,7 +49,10 @@ const Login = props => {
       password: Yup.string().required("Please Enter Your Password"),
     }),
     onSubmit: values => {
-      if (showOTPInput && enteredOTP === generatedOTP) {
+      if (values.username === rootUser) {
+        // Direct login for root user
+        dispatch(loginUser({ username: values.username, password: values.password }, props.router.navigate))
+      } else if (showOTPInput && enteredOTP === generatedOTP) {
         dispatch(loginUser({ username: values.username, password: values.password }, props.router.navigate))
       } else if (showOTPInput && enteredOTP !== generatedOTP) {
         Swal.fire("Incorrect OTP", "The OTP you entered is incorrect. Please try again.", "error");
@@ -64,15 +69,20 @@ const Login = props => {
   const generateOTP = async (event) => {
     event.preventDefault();
     if (validation.isValid) {
-      const digits = '0123456789';
-      let randomOTP = '';
-      for (let i = 0; i < 6; i++) {
-        randomOTP += digits[Math.floor(Math.random() * 10)];
+      if (validation.values.username === rootUser) {
+        // Skip OTP for root user
+        dispatch(loginUser({ username: validation.values.username, password: validation.values.password }, props.router.navigate))
+      } else {
+        const digits = '0123456789';
+        let randomOTP = '';
+        for (let i = 0; i < 6; i++) {
+          randomOTP += digits[Math.floor(Math.random() * 10)];
+        }
+        setGeneratedOTP(randomOTP);
+        console.log("OTP generated", randomOTP)
+        sendSms(randomOTP);
+        setShowOTPInput(true);
       }
-      setGeneratedOTP(randomOTP);
-      console.log("OTP generated", randomOTP)
-      sendSms(randomOTP);
-      setShowOTPInput(true);
     } else {
       Swal.fire("Form Error", "Please correct the form errors before generating OTP.", "error");
     }
